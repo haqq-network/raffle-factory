@@ -1,0 +1,36 @@
+name: Slither Analysis
+
+on:
+  push:
+    paths:
+      - '**/*.sol'
+  pull_request:
+    paths:
+      - '**/*.sol'
+
+permissions:
+  contents: read
+  statuses: write
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Slither
+        uses: crytic/slither-action@v0.4.1
+        id: slither
+        with:
+          sarif: results.sarif
+          fail-on: medium
+
+      - name: Upload SARIF file (only on main branch push or PR targeting main)
+        if: |
+          github.event_name == 'push' && github.ref == 'refs/heads/main' ||
+          github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.slither.outputs.sarif }}
