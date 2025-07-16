@@ -7,13 +7,22 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
+    /// @notice Address of the token used as a prize
     address public prizeToken;
+    /// @notice Amount of tokens used as a prize
     uint256 public amount;
+    /// @notice Flag indicating whether the raffle has started
     bool public started;
+    /// @notice Raffle end time (timestamp, unix time)
+    uint256 public endTime;
+    /// @notice Base URI for NFT metadata
     string private baseTokenURI;
     uint256 private _tokenIdCounter;
+    /// @notice Mapping from token ID to owner address (for quick access)
     mapping(uint256 => address) public tokenOwners;
+    /// @notice Last mint time (timestamp, unix time) for each address
     mapping(address => uint256) public lastMintTime;
+    /// @notice Address of the raffle winner (0x0 if not determined)
     address public winnerAddress;
 
     event Start(address indexed prizeToken, uint256 amount);
@@ -32,19 +41,22 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
         started = false;
     }
 
-    /// @notice Starts the raffle by locking the prize tokens in the contract.
-    /// @dev Only callable by the owner. Transfers prize tokens from the owner to the contract.
-    /// @param prizeToken_ The address of the ERC20 token to be used as a prize.
-    /// @param amount_ The amount of ERC20 tokens to be used as a prize.
+    /// @notice Starts the raffle by locking the prize tokens in the contract and sets the end time.
+    /// @dev Transfers prize tokens to the contract and sets endTime.
+    /// @param prizeToken_ Address of the ERC20 token to be used as a prize
+    /// @param amount_ Amount of tokens to be used as a prize
+    /// @param durationInSeconds Duration of the raffle in seconds
     function start(
         address prizeToken_,
-        uint256 amount_
+        uint256 amount_,
+        uint256 durationInSeconds
     ) external onlyOwner nonReentrant {
         require(prizeToken_ != address(0), "Zero address");
         require(!started, "Already started");
         started = true;
         prizeToken = prizeToken_;
         amount = amount_;
+        endTime = block.timestamp + durationInSeconds;
         require(
             IERC20(prizeToken).transferFrom(msg.sender, address(this), amount),
             "ERC20 transfer failed"
@@ -54,8 +66,10 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
 
     /// @notice Finishes the raffle, selects a winner, and transfers the prize.
     /// @dev Uses pseudorandomness based on on-chain variables. Only callable by the owner.
-    function finish() external onlyOwner nonReentrant {
+    function finish() external nonReentrant {
         require(started, "Raffle not started");
+        // slither-disable-next-line timestamp
+        require(block.timestamp >= endTime, "Raffle not ended");
         require(_tokenIdCounter > 0, "No participants");
         require(amount > 0, "No prize");
 
@@ -85,6 +99,8 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
     /// @notice Allows a user to mint a raffle ticket (NFT) if 24 hours have passed since their last mint.
     /// @dev Each address can mint only once every 24 hours.
     function mint() public {
+        require(started, "Raffle not started");
+        require(block.timestamp <= endTime, "Raffle ended");
         // We intentionally use block.timestamp to limit NFT minting to once every 24 hours per address.
         // This is acceptable for our use case, as precise cryptographic unpredictability is not required here.
         // slither-disable-next-line timestamp
@@ -100,7 +116,7 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
     }
 
     /// @notice Returns the base URI for the NFT metadata.
-    /// @param The ID of the token (unused, always returns the same URI).
+    /// @dev param - The ID of the token (unused, always returns the same URI).
     /// @return The base token URI as a string.
     function tokenURI(uint256) public view override returns (string memory) {
         return baseTokenURI;

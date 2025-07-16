@@ -9,7 +9,9 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "./RaffleNFT.sol";
 
 contract RaffleFactory is Initializable, UUPSUpgradeable, AccessControlUpgradeable, ReentrancyGuardUpgradeable {
+    /// @notice Role identifier for managers
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    /// @notice Array of all deployed raffle contract addresses
     address[] public raffles;
 
     event RaffleCreated(uint256 indexed raffleId, address indexed raffleAddress, address indexed creator);
@@ -52,6 +54,7 @@ contract RaffleFactory is Initializable, UUPSUpgradeable, AccessControlUpgradeab
     /// @param tokenURI_ The base URI for the NFT metadata.
     /// @param prizeToken The address of the ERC20 token to be used as a prize.
     /// @param amount The amount of ERC20 tokens to be used as a prize.
+    /// @param durationInSeconds The duration of the raffle in seconds.
     /// @return The address of the newly created RaffleNFT contract.
     // Reentrancy is guarded via the `nonReentrant` modifier
     // slither-disable-next-line reentrancy-benign
@@ -60,7 +63,8 @@ contract RaffleFactory is Initializable, UUPSUpgradeable, AccessControlUpgradeab
         string memory symbol_,
         string memory tokenURI_,
         address prizeToken,
-        uint256 amount
+        uint256 amount,
+        uint256 durationInSeconds
     ) external onlyManager nonReentrant returns (address) {
         // Transfer tokens from user to factory
         require(
@@ -76,7 +80,7 @@ contract RaffleFactory is Initializable, UUPSUpgradeable, AccessControlUpgradeab
             "Approve to raffle failed"
         );
         // Start the raffle (transfer tokens to the contract)
-        raffle.start(prizeToken, amount);
+        raffle.start(prizeToken, amount, durationInSeconds);
         uint256 raffleId = raffles.length - 1;
         emit RaffleCreated(raffleId, address(raffle), msg.sender);
         return address(raffle);

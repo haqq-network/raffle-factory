@@ -2,6 +2,19 @@ const { expect } = require("chai");
 const { ethers, upgrades } = require("hardhat");
 require('@openzeppelin/hardhat-upgrades');
 
+// Helper to fast-forward time to after the raffle's endTime
+const waitForRaffleEnd = async (raffle) => {
+  const endTime = BigInt((await raffle.endTime()).toString());
+  const blockNum = await ethers.provider.getBlockNumber();
+  const block = await ethers.provider.getBlock(blockNum);
+  const now = BigInt(block.timestamp);
+  if (now < endTime) {
+    const secondsToAdvance = endTime - now + 1n;
+    await ethers.provider.send("evm_increaseTime", [Number(secondsToAdvance)]);
+    await ethers.provider.send("evm_mine");
+  }
+};
+
 describe("Factory", function () {
   it("Should deploy RaffleFactory (proxy) and RaffleNFT", async function () {
     // Deploy RaffleFactory as UUPS proxy
@@ -55,7 +68,8 @@ describe("RaffleFactory full flow", function () {
       "TRFL",
       tokenURI,
       erc20.target,
-      500
+      500,
+      60 // 1 min duration
     );
     const receipt = await tx.wait();
 
@@ -86,6 +100,9 @@ describe("RaffleFactory full flow", function () {
 
     // Before the raffle is finished, the participant does not have prize tokens
     expect(await erc20.balanceOf(participant1.address)).to.equal(0);
+
+    // Wait for raffle to end
+    await waitForRaffleEnd(raffle);
 
     // Manager finishes the raffle via factory
     await factory.connect(manager).finishRaffle(raffleId);
@@ -131,7 +148,8 @@ describe("RaffleFactory full flow", function () {
       "TRFL",
       tokenURI,
       erc20.target,
-      500
+      500,
+      60 // 1 min duration
     );
     const receipt = await tx.wait();
 
@@ -169,6 +187,9 @@ describe("RaffleFactory full flow", function () {
     expect(await raffle.balanceOf(participant2.address)).to.equal(1);
     // Before the raffle is finished, participant2 does not have prize tokens
     expect(await erc20.balanceOf(participant2.address)).to.equal(0);
+
+    // Wait for raffle to end
+    await waitForRaffleEnd(raffle);
 
     // Manager finishes the raffle via factory
     await factory.connect(manager).finishRaffle(raffleId);
@@ -214,7 +235,8 @@ describe("RaffleFactory full flow", function () {
       "TRFL",
       tokenURI,
       erc20.target,
-      500
+      500,
+      60 // 1 min duration
     );
     const receipt = await tx.wait();
 
@@ -255,6 +277,9 @@ describe("RaffleFactory full flow", function () {
     // Before the raffle is finished, participants do not have prize tokens
     expect(await erc20.balanceOf(participant1.address)).to.equal(0);
     expect(await erc20.balanceOf(participant2.address)).to.equal(0);
+
+    // Wait for raffle to end
+    await waitForRaffleEnd(raffle);
 
     // Manager finishes the raffle via factory
     await factory.connect(manager).finishRaffle(raffleId);
