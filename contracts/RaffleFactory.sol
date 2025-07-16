@@ -12,7 +12,7 @@ contract RaffleFactory is Initializable, UUPSUpgradeable, AccessControlUpgradeab
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     address[] public raffles;
 
-    event RaffleCreated(address indexed raffleAddress, address indexed creator);
+    event RaffleCreated(uint256 indexed raffleId, address indexed raffleAddress, address indexed creator);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -38,7 +38,7 @@ contract RaffleFactory is Initializable, UUPSUpgradeable, AccessControlUpgradeab
         _;
     }
 
-    // Reentrancy guarded via `nonReentrant` modifier
+    // Reentrancy is guarded via the `nonReentrant` modifier
     // slither-disable-next-line reentrancy-benign
     function createRaffle(
         string memory name_,
@@ -61,8 +61,18 @@ contract RaffleFactory is Initializable, UUPSUpgradeable, AccessControlUpgradeab
             "Approve to raffle failed"
         );
         // Start the raffle (transfer tokens to the contract)
-        raffle.startRaffle(prizeToken, amount);
-        emit RaffleCreated(address(raffle), msg.sender);
+        raffle.start(prizeToken, amount);
+        uint256 raffleId = raffles.length - 1;
+        emit RaffleCreated(raffleId, address(raffle), msg.sender);
         return address(raffle);
+    }
+
+    function finishRaffle(uint256 raffleId) external onlyManager nonReentrant {
+        require(raffleId < raffles.length, "Raffle does not exist");
+        address raffleAddr = raffles[raffleId];
+        RaffleNFT raffle = RaffleNFT(raffleAddr);
+        require(raffle.winnerAddress() == address(0), "Winner already determined");
+        require(raffle.started(), "Raffle not started");
+        raffle.finish();
     }
 }
