@@ -4,6 +4,12 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 
 module.exports = buildModule("FactoryModule", (m) => {
-  // TODO: Add contract deployment logic
-  return {};
+  // Deploy RaffleFactory as UUPS proxy (no constructor args)
+  const factory = m.contract("RaffleFactory", [], {
+    proxy: {
+      kind: "uups"
+    }
+  });
+
+  return { factory };
 });
