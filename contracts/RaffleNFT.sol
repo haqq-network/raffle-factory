@@ -19,6 +19,10 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
     event Start(address indexed prizeToken, uint256 amount);
     event Finish(address indexed prizeToken, uint256 amount, address indexed winner);
 
+    /// @notice Constructor for the RaffleNFT contract.
+    /// @param name_ The name of the NFT collection.
+    /// @param symbol_ The symbol of the NFT collection.
+    /// @param tokenURI_ The base URI for the NFT metadata.
     constructor(
         string memory name_,
         string memory symbol_,
@@ -28,6 +32,10 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
         started = false;
     }
 
+    /// @notice Starts the raffle by locking the prize tokens in the contract.
+    /// @dev Only callable by the owner. Transfers prize tokens from the owner to the contract.
+    /// @param prizeToken_ The address of the ERC20 token to be used as a prize.
+    /// @param amount_ The amount of ERC20 tokens to be used as a prize.
     function start(
         address prizeToken_,
         uint256 amount_
@@ -44,6 +52,8 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
         emit Start(prizeToken_, amount_);
     }
 
+    /// @notice Finishes the raffle, selects a winner, and transfers the prize.
+    /// @dev Uses pseudorandomness based on on-chain variables. Only callable by the owner.
     function finish() external onlyOwner nonReentrant {
         require(started, "Raffle not started");
         require(_tokenIdCounter > 0, "No participants");
@@ -72,6 +82,8 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
         emit Finish(prizeToken, prize, winner);
     }
 
+    /// @notice Allows a user to mint a raffle ticket (NFT) if 24 hours have passed since their last mint.
+    /// @dev Each address can mint only once every 24 hours.
     function mint() public {
         // We intentionally use block.timestamp to limit NFT minting to once every 24 hours per address.
         // This is acceptable for our use case, as precise cryptographic unpredictability is not required here.
@@ -87,14 +99,26 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
         lastMintTime[msg.sender] = block.timestamp;
     }
 
+    /// @notice Returns the base URI for the NFT metadata.
+    /// @param The ID of the token (unused, always returns the same URI).
+    /// @return The base token URI as a string.
     function tokenURI(uint256) public view override returns (string memory) {
         return baseTokenURI;
     }
 
-    function updateTokenURI  (string memory tokenURI_) external onlyOwner {
+    /// @notice Updates the base token URI for the NFT collection.
+    /// @dev Only callable by the owner.
+    /// @param tokenURI_ The new base URI for the NFT metadata.
+    function updateTokenURI(string memory tokenURI_) external onlyOwner {
         baseTokenURI = tokenURI_;
     }
 
+    /// @notice Internal function to update token ownership mapping on transfer.
+    /// @dev Overrides the ERC721 _update function to track tokenOwners mapping.
+    /// @param to The address receiving the token.
+    /// @param tokenId The ID of the token being transferred.
+    /// @param auth The address initiating the transfer.
+    /// @return The address of the previous owner.
     function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
         address from = super._update(to, tokenId, auth);
         if (from != to && to != address(0)) {
