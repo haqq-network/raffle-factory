@@ -15,6 +15,7 @@ contract RaffleFactory is Initializable, UUPSUpgradeable, AccessControlUpgradeab
     address[] public raffles;
 
     event RaffleCreated(uint256 indexed raffleId, address indexed raffleAddress, address indexed creator);
+    event Withdraw(address indexed token, address indexed to, uint256 amount);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -66,6 +67,8 @@ contract RaffleFactory is Initializable, UUPSUpgradeable, AccessControlUpgradeab
         uint256 amount,
         uint256 durationInSeconds
     ) external onlyManager nonReentrant returns (address) {
+        require(prizeToken != address(0), "Zero address");
+        require(amount > 0, "Zero amount");
         // Transfer tokens from user to factory
         require(
             IERC20(prizeToken).transferFrom(msg.sender, address(this), amount),
@@ -96,5 +99,20 @@ contract RaffleFactory is Initializable, UUPSUpgradeable, AccessControlUpgradeab
         require(raffle.winnerAddress() == address(0), "Winner already determined");
         require(raffle.started(), "Raffle not started");
         raffle.finish();
+    }
+
+    /// @notice Allows admin to withdraw stuck ERC20 tokens from the factory.
+    /// @param token Address of the ERC20 token to withdraw.
+    /// @param to Address to send the tokens to.
+    /// @param amount Amount of tokens to withdraw.
+    function withdraw(address token, address to, uint256 amount) external onlyAdmin nonReentrant {
+        require(token != address(0), "Zero token address");
+        require(to != address(0), "Zero recipient address");
+        require(amount > 0, "Zero amount");
+        require(
+            IERC20(token).transfer(to, amount),
+            "Approve to raffle failed"
+        );
+        emit Withdraw(token, to, amount);
     }
 }

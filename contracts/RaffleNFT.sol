@@ -70,10 +70,13 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
         require(started, "Raffle not started");
         // slither-disable-next-line timestamp
         require(block.timestamp >= endTime, "Raffle not ended");
-        require(_tokenIdCounter > 0, "No participants");
         require(amount > 0, "No prize");
 
-        uint256 winnerTokenId = uint256(
+        address winner = owner();
+        winnerAddress = address(0);
+
+        if (_tokenIdCounter > 0) {
+            uint256 winnerTokenId = uint256(
             keccak256(abi.encodePacked(
                 block.prevrandao, 
                 address(this),
@@ -81,10 +84,11 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
                 gasleft(),
                 _tokenIdCounter
                 ))
-        ) % _tokenIdCounter;
-        address winner = ownerOf(winnerTokenId);
+            ) % _tokenIdCounter;
+            winner = ownerOf(winnerTokenId);
+            winnerAddress = winner;
+        }
         require(winner != address(0), "Winner not found");
-        winnerAddress = winner;
 
         uint256 prize = amount;
         amount = 0;
@@ -101,6 +105,7 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
     function mint() public {
         require(started, "Raffle not started");
         require(block.timestamp <= endTime, "Raffle ended");
+        require(msg.sender != address(0), "Zero address");
         // We intentionally use block.timestamp to limit NFT minting to once every 24 hours per address.
         // This is acceptable for our use case, as precise cryptographic unpredictability is not required here.
         // slither-disable-next-line timestamp
@@ -136,6 +141,7 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
     /// @param auth The address initiating the transfer.
     /// @return The address of the previous owner.
     function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
+        require(to != address(0), "Zero address");
         address from = super._update(to, tokenId, auth);
         if (from != to && to != address(0)) {
             tokenOwners[tokenId] = to;
