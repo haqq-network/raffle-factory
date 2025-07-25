@@ -13,6 +13,8 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
     uint256 public amount;
     /// @notice Flag indicating whether the raffle has started
     bool public started;
+    /// @notice Raffle start time (timestamp, unix time)
+    uint256 public startTime;
     /// @notice Raffle end time (timestamp, unix time)
     uint256 public endTime;
     /// @notice Base URI for NFT metadata
@@ -54,6 +56,7 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
         require(prizeToken_ != address(0), "Zero address");
         require(!started, "Already started");
         started = true;
+        startTime = block.timestamp;
         prizeToken = prizeToken_;
         amount = amount_;
         endTime = block.timestamp + durationInSeconds;
