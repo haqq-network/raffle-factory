@@ -26,6 +26,8 @@ jobs:
         with:
           sarif: results.sarif
           fail-on: medium
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
 
       - name: Upload SARIF file (only on main branch push or PR targeting main)
         if: |

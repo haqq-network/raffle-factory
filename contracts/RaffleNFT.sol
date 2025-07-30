@@ -27,7 +27,15 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
     /// @notice Address of the raffle winner (0x0 if not determined)
     address public winnerAddress;
 
+    /// @notice Emitted when a raffle starts
+    /// @param prizeToken The address of the ERC20 token used as prize
+    /// @param amount The amount of tokens locked as prize
     event Start(address indexed prizeToken, uint256 amount);
+    
+    /// @notice Emitted when a raffle finishes and winner is determined
+    /// @param prizeToken The address of the ERC20 token that was used as prize
+    /// @param amount The amount of tokens transferred to the winner
+    /// @param winner The address of the raffle winner
     event Finish(address indexed prizeToken, uint256 amount, address indexed winner);
 
     /// @notice Constructor for the RaffleNFT contract.
