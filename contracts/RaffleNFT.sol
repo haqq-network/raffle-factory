@@ -19,7 +19,8 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
     uint256 public endTime;
     /// @notice Base URI for NFT metadata
     string private baseTokenURI;
-    uint256 private _tokenIdCounter;
+    /// @notice Total number of tokens minted
+    uint256 public totalSupply;
     /// @notice Mapping from token ID to owner address (for quick access)
     mapping(uint256 => address) public tokenOwners;
     /// @notice Last mint time (timestamp, unix time) for each address
@@ -86,16 +87,16 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
         address winner = owner();
         winnerAddress = address(0);
 
-        if (_tokenIdCounter > 0) {
+        if (totalSupply > 0) {
             uint256 winnerTokenId = uint256(
             keccak256(abi.encodePacked(
                 block.prevrandao, 
                 address(this),
                 tx.gasprice,
                 gasleft(),
-                _tokenIdCounter
+                totalSupply
                 ))
-            ) % _tokenIdCounter;
+            ) % totalSupply;
             winner = ownerOf(winnerTokenId);
             winnerAddress = winner;
         }
@@ -124,10 +125,10 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
             block.timestamp - lastMintTime[msg.sender] >= 1 days,
             "You can only mint once every 24 hours"
         );
-        uint256 tokenId = _tokenIdCounter;
+        uint256 tokenId = totalSupply;
         _mint(msg.sender, tokenId);
         tokenOwners[tokenId] = msg.sender;
-        _tokenIdCounter++;
+        totalSupply++;
         lastMintTime[msg.sender] = block.timestamp;
     }
 
