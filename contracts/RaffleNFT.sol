@@ -10,7 +10,9 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
     /// @notice Address of the token used as a prize
     address public prizeToken;
     /// @notice Amount of tokens used as a prize
-    uint256 public amount;
+    uint256 public prizeAmount;
+    /// @notice Amount of tokens transferred to the winner
+    uint256 public winnerAmount;
     /// @notice Flag indicating whether the raffle has started
     bool public started;
     /// @notice Raffle start time (timestamp, unix time)
@@ -67,10 +69,10 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
         started = true;
         startTime = block.timestamp;
         prizeToken = prizeToken_;
-        amount = amount_;
+        prizeAmount = amount_;
         endTime = block.timestamp + durationInSeconds;
         require(
-            IERC20(prizeToken).transferFrom(msg.sender, address(this), amount),
+            IERC20(prizeToken).transferFrom(msg.sender, address(this), prizeAmount),
             "ERC20 transfer failed"
         );
         emit Start(prizeToken_, amount_);
@@ -82,10 +84,10 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
         require(started, "Raffle not started");
         // slither-disable-next-line timestamp
         require(block.timestamp >= endTime, "Raffle not ended");
-        require(amount > 0, "No prize");
+        require(prizeAmount > 0, "No prize");
+        require(winnerAddress == address(0), "Already finished");
 
         address winner = owner();
-        winnerAddress = address(0);
 
         if (totalSupply > 0) {
             uint256 winnerTokenId = uint256(
@@ -102,14 +104,21 @@ contract RaffleNFT is ERC721, ReentrancyGuard, Ownable {
         }
         require(winner != address(0), "Winner not found");
 
-        uint256 prize = amount;
-        amount = 0;
+        winnerAmount = prizeAmount;
+        prizeAmount = 0;
         started = false;
+
         require(
-            IERC20(prizeToken).transfer(winner, prize),
+            IERC20(prizeToken).transfer(winner, winnerAmount),
             "ERC20 transfer to winner failed"
         );
-        emit Finish(prizeToken, prize, winner);
+        emit Finish(prizeToken, winnerAmount, winner);
+    }
+
+    /// @notice Returns the current prize amount (active + paid)
+    /// @return The total amount of tokens (current prize + paid prize)
+    function amount() public view returns (uint256) {
+        return prizeAmount + winnerAmount;
     }
 
     /// @notice Allows a user to mint a raffle ticket (NFT) if 24 hours have passed since their last mint.
