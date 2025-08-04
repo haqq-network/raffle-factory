@@ -1,6 +1,6 @@
 {
   "name": "raffle-factory",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Solidity smart contract - Raffle Factory",
   "main": "index.js",
   "scripts": {
