@@ -115,4 +115,11 @@ contract RaffleFactory is Initializable, UUPSUpgradeable, AccessControlUpgradeab
         );
         emit Withdraw(token, to, amount);
     }
+
+    /// @notice Returns the total number of raffles created by this factory.
+    /// @dev This is a view function that returns the length of the raffles array.
+    /// @return The total number of raffles deployed by this factory.
+    function rafflesCount() public view returns (uint256) {
+        return raffles.length;
+    }
 }
