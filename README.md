@@ -88,6 +88,33 @@ To verify on haqq-mainnet:
 npx hardhat verify --network haqq-mainnet 0xYOUR_CONTRACT_ADDR
 ```
 
+## Scripts
+
+### Upgrade Contract
+Upgrades RaffleFactory contract via UUPS proxy.
+
+```bash
+# Set proxy address
+export PROXY_ADDRESS=0x1234567890123456789012345678901234567890
+
+# Run upgrade
+npx hardhat run scripts/upgrade.js --network <network_name>
+```
+
+**Examples:**
+```bash
+# Testnet
+PROXY_ADDRESS=0x3Bfb78027A66df3180E7174E6f77d37b16DF252b npx hardhat run scripts/upgrade.js --network haqq-testedge2
+
+# Local
+PROXY_ADDRESS=0x1234567890123456789012345678901234567890 npx hardhat run scripts/upgrade.js --network localhost
+```
+
+**Requirements:**
+- Contract must be deployed as UUPS proxy
+- Valid proxy address
+- Admin role permissions
+
 ## Tests
 Run all tests:
 ```bash
