@@ -15,9 +15,24 @@ async function main() {
   // Get the new implementation contract factory
   const RaffleFactory = await ethers.getContractFactory("RaffleFactory");
   
+  // Try to get old version before upgrade
+  let oldVersion = "0.0.0";
+  try {
+    const oldContract = RaffleFactory.attach(proxyAddress);
+    oldVersion = await oldContract.VERSION();
+    console.log("📋 Old version:", oldVersion);
+  } catch (error) {
+    console.log("📋 Old version: 0.0.0 (not available)");
+  }
+  
   // Upgrade the proxy
   const upgraded = await upgrades.upgradeProxy(proxyAddress, RaffleFactory);
   await upgraded.waitForDeployment();
+  
+  // Get new version after upgrade
+  const newVersion = await upgraded.VERSION();
+  console.log("📋 New version:", newVersion);
+  console.log("🔄 Version change:", oldVersion, "→", newVersion);
   
   console.log("RaffleFactory upgraded successfully!");
   console.log("Proxy address:", upgraded.target);
@@ -43,6 +58,11 @@ async function main() {
     bytecode: artifact.bytecode,
     transactionHash: deploymentTx?.hash || "N/A",
     implementationAddress,
+    version: {
+      old: oldVersion,
+      new: newVersion,
+      upgradeTimestamp: new Date().toISOString()
+    }
   };
 
   // Create network-specific deployments folder

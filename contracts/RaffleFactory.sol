@@ -13,6 +13,8 @@ contract RaffleFactory is Initializable, UUPSUpgradeable, AccessControlUpgradeab
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     /// @notice Array of all deployed raffle contract addresses
     address[] public raffles;
+    /// @notice Contract version for compatibility checking
+    string public constant VERSION = "1.0.0";
 
     event RaffleCreated(uint256 indexed raffleId, address indexed raffleAddress, address indexed creator);
     event Withdraw(address indexed token, address indexed to, uint256 amount);
