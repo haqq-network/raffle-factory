@@ -34,7 +34,7 @@ module.exports = {
   etherscan: {
     apiKey: {
       'haqq-testedge2': 'empty',
-      'haqq-mainnet': 'empty',
+      'haqq': 'empty',
     },
     customChains: [
       {
@@ -46,7 +46,7 @@ module.exports = {
         }
       },
       {
-        network: "haqq-mainnet",
+        network: "haqq",
         chainId: 11235,
         urls: {
           apiURL: "https://explorer.haqq.network/api",
