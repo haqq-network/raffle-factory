@@ -17,7 +17,7 @@
     "hardhat": "^2.25.0"
   },
   "dependencies": {
-    "axios": "^1.11.0",
+    "axios": "^1.12.1",
     "cookie": "^0.7.0",
     "form-data": "^4.0.4"
   }
